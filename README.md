@@ -39,7 +39,9 @@ pulsout portb.0, 150
 ```
 The angles of each servo is declared using its pulse counterpart
 
-SEE .pdf for more details
+- SEE .pdf for more details
+- SEE RoboticArm.pbp to see entire code
+
 
 ## Testing Video
 
