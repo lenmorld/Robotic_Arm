@@ -17,14 +17,17 @@ BS Computer Engineering - STI College Rosario Batch 2012
 
 #### Objectives
 Specifically, this study aims to:
+
 1. Design and develop the articulated jointed arm and base that will hold the end effector.
 The arm utilizes three servo motors to hold the end effector. The motors
 are connected by brackets.
+
 2. Design and develop a cleaning tool as the end effector.
 The arm utilizes a DC motor as a cleaning tool.
-3. Design and develop a circuit that can control the robotic arm‟s
+3. Design and develop a circuit that can control the robotic arm's
 movement.
 A circuit, with an MCU as its main chip, contains pushbuttons that can control the movement of each of the motor bracket clockwise and counter clockwise.
+
 4. How to create a microcontroller program that can efficiently utilize the robotic arm?
 The MCU program efficiently sends pulses to the servo motor for every movement. The program is written and compiled using PICBASIC PRO.
 
