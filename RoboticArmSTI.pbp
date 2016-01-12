@@ -1,0 +1,383 @@
+'######################################################################
+'######################################################################
+
+'ooooooooo.              .o8                     .    o8o            
+'`888   `Y88.           "888                   .o8    `"'            
+' 888   .d88'  .ooooo.   888oooo.   .ooooo.  .o888oo oooo   .ooooo.  
+' 888ooo88P'  d88' `88b  d88' `88b d88' `88b   888   `888  d88' `"Y8 
+' 888`88b.    888   888  888   888 888   888   888    888  888       
+' 888  `88b.  888   888  888   888 888   888   888 .  888  888   .o8 
+'o888o  o888o `Y8bod8P'  `Y8bod8P' `Y8bod8P'   "888" o888o `Y8bod8P'                                                                                                                                     
+'                                                                    
+'     .888.                                     '######################
+'    .8"888.     oooo d8b ooo. .oo.  .oo.       '######################
+'   .8' `888.    `888""8P `888P"Y88bP"Y88b      '###################### 
+'  .88ooo8888.    888      888   888   888      '######################   
+' .8'     `888.   888      888   888   888      '######################
+'o88o     o8888o d888b    o888o o888o o888o     '######################
+                                                '###################### 
+                                                '######################
+'                                               '######################
+'                        -&-#                   '######################
+'                            \                  '######################
+'                            #                  '######################
+'        _________       ____|_____             '######################
+'       /    #    |     |    #     |            '######################           
+                                                '######################
+                                                '######################
+'BSCoE 1001-A batch 2012                        '###################### 
+'COEELE2 Robotics and Mechatronix               '###################### 
+                                                '######################
+'PROJECT ENGINEER                               '######################
+'Engr. Paolo Lozada                             '###################### 
+                                                '###################### 
+'HARDWARE ENGINEERS                             '###################### 
+'Jan Paul Portuguez                             '###################### 
+'Walter Salatandre                              '###################### 
+'Agustin Ace DOnes                              '###################### 
+'Romeo Paderna III                              '###################### 
+                                                '###################### 
+'SOFTWARE ENGINEERS                             '###################### 
+'Lenmor Dimanalata                              '###################### 
+'Jon Jon Legaspi                                '###################### 
+                                                '###################### 
+'RESEARCH and DEVELOPMENT ENGINEERS             '###################### 
+'Chona Mojillo                                  '###################### 
+'Armeo TOlentino                                '###################### 
+                                                '###################### 
+'###################################################################### 
+'######################################################################
+'######################################################################
+
+
+'proto 1 : 1-27-2012
+'proto 2 : 3-13-2012
+'proto 3 : 3-20-2012
+'proto 4 : 3-24-2012    
+'proto 5:  4-01-2012    
+
+'DC Motor -> seperate switch (not controlled by PIC)
+            ' gray button
+
+'TOP servo   -> PORTA.6
+
+    'LED indicator YELLOW -> PORTA.7
+    
+    '-> initial pos at center
+    
+    'goes for 75 degrees 115:185 pulse
+
+    'right -> PORTA.3 [gray button]
+    'left -> PORTA.2 [blue button]
+      
+    
+'MID servo  -> PORTB.7
+
+    'LED indicator BLUE -> PORTA.0
+
+    '-> initial pos at center
+    
+    'goes for 110 degrees 95:205 pulse
+
+    'right -> PORTB.0 [green button]
+    'left -> PORTA.4 [red button]
+    
+    
+'BOTTOM servo    -> PORTB.6
+
+    'LED indicator GREEN -> PORTA.1
+
+    '-> initial pos at center
+    
+    'goes for 90 degrees 75:175 pulse
+
+    'right -> PORTB.2 [yellow button]
+    'left -> PORTB.1 [black button]
+    
+'RAMP servo     ->  PORTB.5
+
+    '-> initial pos at center
+    
+    'goes for 160 degrees 75:175 pulse
+
+    'right -> PORTB.4 [yellow button]
+    'left -> PORTB.3 [black button]
+    
+    
+INCLUDE "modedefs.bas"
+
+define _XTAL_FREQ 4000000
+OSCCON = %01100000        '  Set intRC to 4 MHz
+ADCON1 = 6                '  Turn off ADC, all pins must be digital I/O
+
+
+TRISA = %00011100                  
+                                        'RA0 -> 0 midservo LED indicator BLUE
+                                        'RA1 -> 0 botservo LED indicator GREEN
+                                        'RA2 <- 1 ts_left
+                                        'RA3 <- 1 ts_ryt
+                                        'RA4 <- 1 ms_left
+                                        'RA5 -- x [reserved MCLR/VPP pin]
+                                        'RA6 -> 1 topservo
+                                        'RA7 -> 1 topservo LED indicator YELLOW
+
+
+TRISB = %00011111                  
+
+                                        'RB0 <- 1 ms_ryt
+                                        'RB1 <- 1 bs_left
+                                        'RB2 <- 1 bs_ryt
+                                        'RB3 <- 1 rs_left
+                                        'RB4 <- 1 rs_ryt
+                                        'RB5 -> 0 rampservo
+                                        'RB6 -> 0 botservo
+                                        'RB7 -> 0 midservo
+                                        
+                                        
+
+
+PORTA =0                            'off PORTA at start
+PORTB =0                            'off PORTB at start
+
+
+
+pulseWidth1 var byte                'variables to hold each servo pulse
+pulseWidth2 var byte
+pulseWidth3 var byte
+pulseWidth4 VAR BYTE
+
+refreshPeriod CON 20                'refresh/pause period 20ms
+                                    '[servo expects a pulse every 20ms]
+    
+'============ PULSE widths for ANGLE ranges ============= 
+
+'60 extreme left (not recommended)
+'70 far left
+'100 left
+'150 center
+'200 right
+'250 far right
+'270 extreme right   (not recommended)
+
+
+'min - lower limit of the angle pulse
+'max - higher limit of the angle pulse
+
+
+'the higher the range, the larger angle
+
+    
+'TOP
+topmin CON 105
+topmax con 200
+
+'MID
+midmin CON 90
+midmax con 210
+
+'BOTTOM                
+botmin CON 75
+botmax con 225
+
+'RAMP
+rampmin CON 75
+rampmax CON 225  
+
+'=======================================
+
+
+
+pulseWidth1 = 110   'set starting position at working position, a bit right
+pulseWidth2 = 100   'set starting position at working position, a bit right
+pulseWidth3 = 150   'set starting position at center / pulse 150
+pulseWidth4 = 150    'set starting position at center / pulse 150
+
+
+start:
+
+'take the output pins low so we can pulse 'em high
+LOW PORTA.6         'TOP
+LOW PORTB.7         'MID
+LOW PORTB.6         'BOTTOM
+LOW PORTB.5         'RAMP
+
+
+' pulse the pins / output to servo by sending PWM (Pulse Width Modulated) signal
+
+PulsOut PORTA.6, pulseWidth1
+
+PulsOut PORTB.7, pulseWidth2
+
+PulsOut PORTB.6, pulseWidth3
+
+PulsOut PORTB.5, pulseWidth4
+
+' pause for as long as needed
+
+Pause refreshPeriod
+
+
+'=================== TOP servo control =======================	
+	
+IF PORTA.3 = 0 then             'ts_ryt switch [gray]
+
+    PORTA.7 = 1             'LED1 on
+    PORTA.0 = 0             'LED2 off
+    PORTA.1 = 0             'LED3 off 
+    
+    
+    'decrease pulse until it reaches the lower limit pulse
+    
+    IF pulseWidth1 <= topmin Then       
+	       pulseWidth1 = topmin            
+    Else	
+	   pulseWidth1 = pulseWidth1 - 1
+    Endif 
+	
+
+ENDIF
+
+
+IF PORTA.2 = 0 then             'ts_left switch [blue]
+
+    PORTA.7 = 1             'LED1 on
+    PORTA.0 = 0             'LED2 off
+    PORTA.1 = 0             'LED3 off  
+    
+    
+    'increase pulse until it exceeds the higher limit pulse
+    
+    
+    IF pulseWidth1 > topmax Then
+    	pulseWidth1 = topmax
+    Else	
+    	pulseWidth1 = pulseWidth1 + 1
+    Endif
+	
+
+ENDIF
+
+
+'=================== MID servo control =======================	
+
+IF PORTB.0 = 0 then             'ms_ryt  switch [green]
+
+    PORTA.7 = 0             'LED1 off
+    PORTA.0 = 1             'LED2 on
+    PORTA.1 = 0             'LED3 off 
+
+    'decrease pulse until it equals the lower limit pulse
+        
+    IF pulseWidth2 <= midmin Then
+	       pulseWidth2 = midmin
+    Else	
+	   pulseWidth2 = pulseWidth2 - 1
+    Endif 
+	
+
+ENDIF
+
+
+IF PORTA.4 = 0 then             ' ms_left switch [red]
+
+    PORTA.7 = 0             'LED1 off
+    PORTA.0 = 1             'LED2 on
+    PORTA.1 = 0             'LED3 off  
+    
+    'increase pulse until it exceeds the higher limit pulse
+    
+    IF pulseWidth2 > midmax Then
+    	pulseWidth2 = midmax
+    Else	
+    	pulseWidth2 = pulseWidth2 + 1
+    Endif
+	
+
+ENDIF
+
+
+'=================== BOTTOM servo control =======================	
+
+
+  IF PORTB.2 = 0 then             'bs_ryt switch [yellow]
+
+    PORTA.7 = 0             'LED1 off
+    PORTA.0 = 0             'LED2 off
+    PORTA.1 = 1             'LED3 on 
+
+    'decrease pulse until it equals the lower limit pulse
+       
+    IF pulseWidth3 <= botmin Then
+	       pulseWidth3 = botmin
+    Else	
+	   pulseWidth3 = pulseWidth3 - 1
+    Endif 
+	
+
+ENDIF
+
+IF PORTB.1 = 0 then             'bs_left [black]
+
+    PORTA.7 = 0             'LED1 off
+    PORTA.0 = 0             'LED2 off
+    PORTA.1 = 1             'LED3 on 
+    
+    'increase pulse until it exceeds the higher limit pulse    
+    
+    IF pulseWidth3 > botmax Then
+    	pulseWidth3 = botmax
+    Else	
+    	pulseWidth3 = pulseWidth3 + 1
+    Endif
+	
+
+ENDIF
+
+
+'=================== RAMP servo control =======================	
+
+
+  IF PORTB.4 = 0 then             'rs_ryt switch [green]
+
+    PORTA.7 = 0             'LED1 off
+    PORTA.0 = 0             'LED2 off
+    PORTA.1 = 0             'LED3 on 
+
+    'decrease pulse until it equals the lower limit pulse
+       
+    IF pulseWidth4 <= rampmin Then
+	       pulseWidth4 = rampmin
+    Else	
+	   pulseWidth4 = pulseWidth4 - 1
+    Endif 
+	
+
+ENDIF
+
+IF PORTB.3 = 0 then             'rs_left [blue]
+
+    PORTA.7 = 0             'LED1 off
+    PORTA.0 = 0             'LED2 off
+    PORTA.1 = 0             'LED3 on 
+    
+    'increase pulse until it exceeds the higher limit pulse    
+    
+    IF pulseWidth4 > rampmax Then
+    	pulseWidth4 = rampmax
+    Else	
+    	pulseWidth4 = pulseWidth4 + 1
+    Endif
+	
+
+ENDIF
+
+
+GoTo start          'loop again to wait for input
+
+END
+
+
+
+
+
+
